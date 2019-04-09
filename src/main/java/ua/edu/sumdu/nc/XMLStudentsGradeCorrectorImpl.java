@@ -79,7 +79,10 @@ public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
         XPath xpath = XPathFactory.newInstance().newXPath();
         NodeList subjects;
         try {
-            subjects = (NodeList) xpath.evaluate("/group/student[@firstname = '" + "" + "']/subject", student, XPathConstants.NODESET);
+            subjects = (NodeList) xpath.evaluate(
+                    "/group/student[@firstname = '" + student.getAttribute("firstname")
+                            + "'][@lastname = '"+ student.getAttribute("lastname")
+                            +"']/subject", document, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
         }
