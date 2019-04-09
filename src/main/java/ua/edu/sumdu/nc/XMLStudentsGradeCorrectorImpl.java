@@ -116,14 +116,6 @@ public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
             tr.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, "group.dtd");
             StreamResult streamResult = new StreamResult(correctedFile);
             tr.transform(new DOMSource(document.getDocumentElement()), streamResult);
-            try {
-                streamResult.getWriter().flush();
-            } catch (IOException e) {
-                if (LOGGER.isEnabledFor(Level.ERROR)) {
-                    LOGGER.error(e);
-                }
-            }
-
         } catch (TransformerException e) {
             if (LOGGER.isEnabledFor(Level.ERROR)) {
                 LOGGER.error(e);
