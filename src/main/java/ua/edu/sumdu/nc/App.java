@@ -2,14 +2,24 @@ package ua.edu.sumdu.nc;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.xml.sax.SAXParseException;
+
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class App {
 
-    private static final Logger LOGGER = Logger.getLogger(App.class.getSimpleName());
-    public static void main( String[] args ) {
+    static {
+        configureLogger();
+        LOGGER = Logger.getLogger(App.class.getSimpleName());
+    }
+
+    private static final Logger LOGGER;
+    public static void main( String[] args ) throws SAXParseException {
+        configureLogger();
         if (!validate(args)) {
             printRequirements();
             return;
@@ -23,6 +33,16 @@ public class App {
             if (LOGGER.isEnabledFor(Level.ERROR)) {
                 LOGGER.error(e);
             }
+        }
+    }
+
+    private static void configureLogger() {
+        try {
+            System.setProperty("logfile", new File(new File(App.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).getParentFile(), "log.log").getAbsolutePath());
+            PropertyConfigurator.configure(App.class.getResourceAsStream("/log4j.properties"));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,13 +1,15 @@
 package ua.edu.sumdu.nc;
 
-import com.sun.org.apache.xpath.internal.NodeSet;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -26,18 +28,38 @@ import java.io.IOException;
 public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
 
     private static final Logger LOGGER = Logger.getLogger(XMLStudentsGradeCorrectorImpl.class.getSimpleName());
+    @SuppressWarnings("FieldCanBeLocal")
     private final File file;
     private final File correctedFile;
     private final Document document;
     private boolean hasBeenChanged;
 
-    public XMLStudentsGradeCorrectorImpl(File file, File correctedFile) {
+    public XMLStudentsGradeCorrectorImpl(File file, File correctedFile) throws SAXParseException {
         this.file = file;
         this.correctedFile = correctedFile;
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setValidating(true);
-            document = dbf.newDocumentBuilder().parse(file);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            db.setErrorHandler(new ErrorHandler() {
+                @Override
+                public void warning(SAXParseException exception) throws SAXException {
+                    throw exception;
+                }
+
+                @Override
+                public void error(SAXParseException exception) throws SAXException {
+                    throw exception;
+                }
+
+                @Override
+                public void fatalError(SAXParseException exception) throws SAXException {
+                    throw exception;
+                }
+            });
+            document = db.parse(file);
+        } catch (SAXParseException e) {
+            throw e;
         } catch (ParserConfigurationException | IOException | SAXException e) {
             throw new RuntimeException(e);
         }
@@ -53,15 +75,12 @@ public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
             student = (Element) students.item(i);
             tagAvg = getStudentAvg(student);
             actualAvg = countStudentActualAvg((Element) students.item(i));
-            System.err.println("tag value = " + tagAvg + " actualAvg = " + actualAvg);
             if (Math.abs(tagAvg - actualAvg) >= 0.1) {
-                System.err.println("i am going to set new value");
                 setStudentAvg(student, actualAvg);
                 hasBeenChanged = true;
             }
         }
         if (hasBeenChanged) {
-            System.err.println("i am going to save");
             save();
         }
     }
@@ -87,16 +106,13 @@ public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
             throw new RuntimeException(e);
         }
         int total = 0;
-        System.err.println("Amount of subjects = " + subjects.getLength());
         for (int i = 0; i < subjects.getLength(); i++) {
             try {
-                System.err.println("subject mark = " + Integer.parseInt(subjects.item(i).getAttributes().getNamedItem("mark").getTextContent()));
                 total += Integer.parseInt(subjects.item(i).getAttributes().getNamedItem("mark").getTextContent());
             } catch (NumberFormatException e) {
                 LOGGER.error("Invalid mark value", e);
             }
         }
-        System.err.println("total = " + total);
         return ((double) total) / subjects.getLength();
     }
 
@@ -125,7 +141,7 @@ public class XMLStudentsGradeCorrectorImpl implements XMLCorrector {
 
     private double getStudentAvg(Element student) {
         if (student.getElementsByTagName("average").getLength() == 0) {
-            Element average =  document.createElement("average");
+            Element average = document.createElement("average");
             average.setTextContent("-1");
             student.appendChild(average);
         }
